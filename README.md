@@ -12,6 +12,17 @@ See the **.env.example** file and create **.env** in a root directory
 
 In docker-compose file change the password for redis to REDIS_PASSWORD from env
 
+```
+...
+services:
+  redis:
+    container_name: redis
+    image: redis:alpine
+    command: redis-server --requirepass sOmE_sEcUrE_pAsS #here
+    ports:
+...
+```
+
 ### Instalation
 
 To install and run the code in the docker containers,
@@ -166,6 +177,27 @@ Date: Mon, 05 Oct 2020 15:18:14 GMT
 
 "Success"
 ```
+
+## Techology Stack
+
+##### Flask
+
+A simple and lightweight framework that allows you to quickly create an API without unnecessary configurations
+
+##### Redis
+
+A very fast and easy alternative to heavy and slow databases, ideal for a message broker
+
+##### RQ (redis queue)
+
+Excellent message queuing library for Redis
+
+- Priority queues. RQs priority queue model is simple and efficient - workers read from queues in order
+- The RQ api is simple.
+- flexible configuration of queue parameters
+- before worker's death it's wait until the currently running task is finished, stop the work loop and gracefully register its own death.
+- all unfinished (and completed) tasks are kept in memory until the timeout expires
+
 
 ## Authors
 
