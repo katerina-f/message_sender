@@ -1,4 +1,6 @@
+# internal modules
 import os
+
 
 # set variables to
 USER = os.environ.get("USER", "Katya")

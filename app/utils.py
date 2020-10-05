@@ -64,7 +64,7 @@ class Validator:
 class Postman:
 
     """
-    Class for sending messages and checking their's status
+    Class for sending messages and checking their statuses
     """
 
     def __init__(self, messengers):

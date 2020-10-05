@@ -1,5 +1,8 @@
+# external modules
 from flask_httpauth import HTTPBasicAuth
 from flask import make_response, jsonify
+
+# project modules
 from .config import USER, PASSWORD
 
 
