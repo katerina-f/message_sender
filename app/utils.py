@@ -1,7 +1,18 @@
+# internal modules
 from datetime import datetime
-from rq import requeue_job
 
-import time
+# external modules
+from redis import Redis
+from rq import Retry, Queue
+from rq.job import Job
+
+# project modules
+from .config import REDIS_PASSWORD, \
+                    RETRY_COUNT, \
+                    RETRY_INTERVAL, \
+                    DELETE_FAILED_TIMEOUT, \
+                    DELETE_FINISHED_TIMEOUT
+
 
 class Validator:
 
@@ -16,7 +27,7 @@ class Validator:
             raise ValueError ("Max lenght of the message is 800")
 
         if send_at := message.get("send_at"):
-            self.validate_send_at(send_at)
+            message["send_at"] = self.validate_send_at(send_at)
 
         valide_recip = self.validate_recipients(message.get("recipients"))
         message["recipients"] = [r for r in valide_recip if r]
@@ -41,41 +52,100 @@ class Validator:
         if not isinstance(send_at, str):
             raise TypeError ("send_at parameter must be a str")
         formate_string = "%Y-%m-%d %H:%M:%S"
-        datetime.strptime(send_at, formate_string)
+
+        send_at = datetime.strptime(send_at, formate_string)
+
+        if send_at < datetime.now():
+            raise ValueError ("Date must be in a future!")
+
         return send_at
 
 
 class Postman:
 
-    def __init__(self, main_queue, resend_queue, messengers, scheduler):
-        self.main_queue = main_queue
-        self.resend_queue = resend_queue
+    """
+    Class for sending messages and checking their's status
+    """
+
+    def __init__(self, messengers):
         self.messengers = messengers
-        self.scheduler = scheduler
+        # create redis connection
+        self.redis_conn = Redis(host="redis", port="6379", password=REDIS_PASSWORD)
+
+        # create queues
+        self.main_queue = Queue("medium", connection=self.redis_conn,
+                                failed_ttl=DELETE_FAILED_TIMEOUT,
+                                default_timeout=DELETE_FINISHED_TIMEOUT)
+        self.check_queue = Queue("check", connection=self.redis_conn,
+                                failed_ttl=DELETE_FAILED_TIMEOUT,
+                                default_timeout=DELETE_FINISHED_TIMEOUT)
+        self.scheduled_queue = Queue("scheduled", connection=self.redis_conn,
+                                    failed_ttl=DELETE_FAILED_TIMEOUT,
+                                    default_timeout=DELETE_FINISHED_TIMEOUT)
 
     def send_message(self, message):
-        jobs = []
+        started_jobs = []
+        scheduled = []
         for messenger in message["recipients"]:
             service = self.messengers.get(messenger.get("service"))
             if not service:
                 raise ValueError ("Unknown messenger!!!")
 
-            send_job = self.main_queue.enqueue(service.send_message,
-                                     args=[message],
-                                     exc_handler=self.job_exception_handler)
-            time.sleep(5)
-            # success_job = self.main_queue.enqueue(self.on_success, self, depends_on=send_job)
+            description = f"Message to user: {messenger.get('uuid')} with body: {message.get('body')}"
 
-        return send_job.result
+            if message.get("send_at"):
+                scheduled_send_job = self.scheduled_queue.enqueue_at(message.get("send_at"),
+                                               service.send_message,
+                                               message,
+                                               retry=Retry(max=RETRY_COUNT, interval=RETRY_INTERVAL),
+                                               description=description)
+                scheduled.append(scheduled_send_job.description)
+            else:
+                send_job = self.main_queue.enqueue(service.send_message,
+                                                   message,
+                                                   retry=Retry(max=RETRY_COUNT, interval=RETRY_INTERVAL),
+                                                   description=description)
 
-    def job_exception_handler(self, job, exc_type, exc_value, traceback):
-        return exc_type
+                started_jobs.append(send_job.description)
 
-    def retry_job(self, job):
-        pass
+        result = {"started": started_jobs, "scheduled": scheduled}
 
-    def on_success(self):
-        return {"status": 200, "message": "success"}
+        return result
 
-def say_hello():
-    return "Hello"
+    def get_scheduled(self):
+        scheduled = self.__get_jobs_descriptions(self.scheduled_queue.scheduled_job_registry.get_job_ids())
+        return {"scheduled": scheduled}
+
+    def get_finished(self):
+        finished_scheduled = self.__get_jobs_descriptions(self.scheduled_queue.finished_job_registry.get_job_ids())
+        finished_main = self.__get_jobs_descriptions(self.main_queue.finished_job_registry.get_job_ids())
+        finished_with_fail = self.__get_jobs_descriptions(self.main_queue.failed_job_registry.get_job_ids() +
+                self.scheduled_queue.failed_job_registry.get_job_ids())
+
+        return {"finished_scheduled": finished_scheduled,
+                "finished_main": finished_main,
+                "finished_with_fail": finished_with_fail}
+
+    def delete_all(self):
+        self.main_queue.empty()
+        self.scheduled_queue.empty()
+        self.check_queue.empty()
+
+        for j in self.main_queue.failed_job_registry.get_job_ids():
+            self.main_queue.failed_job_registry.remove(j)
+
+        for j in self.scheduled_queue.failed_job_registry.get_job_ids():
+            self.scheduled_queue.failed_job_registry.remove(j)
+
+        for j in self.main_queue.finished_job_registry.get_job_ids():
+            self.main_queue.finished_job_registry.remove(j)
+
+        for j in self.scheduled_queue.finished_job_registry.get_job_ids():
+            self.scheduled_queue.finished_job_registry.remove(j)
+
+        return "Success"
+
+
+    def __get_jobs_descriptions(self, jobs):
+        jobs = Job.fetch_many(jobs, connection=self.redis_conn)
+        return [job.description for job in jobs]

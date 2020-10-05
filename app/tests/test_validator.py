@@ -44,8 +44,9 @@ class TestValidator(TestCase):
     def test_validate_send_date(self):
         with self.assertRaises((TypeError, ValueError)):
             self.validator.validate_send_at(wrong_send_date)
-
-        self.assertEqual(self.validator.validate_send_at(valide_send_date), valide_send_date)
+        formate_string = "%Y-%m-%d %H:%M:%S"
+        self.assertEqual(self.validator.validate_send_at(valide_send_date),
+                         datetime.strptime(valide_send_date, formate_string))
 
 if __name__ == "__main__":
     main()
