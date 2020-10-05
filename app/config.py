@@ -7,8 +7,8 @@ USER = os.environ.get("USER", "Katya")
 PASSWORD = os.environ.get("PASSWORD", "12345678")
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "sOmE_sEcUrE_pAsS")
 
-# set variables for message queues
 
+# set variables for message queues
 # how many times queue will try to send message
 try:
     RETRY_COUNT = int(os.environ.get("RETRY_COUNT", 5))
