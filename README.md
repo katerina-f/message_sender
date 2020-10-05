@@ -42,6 +42,14 @@ and run it in the project root
 ./run.sh
 ```
 
+#### Tests
+
+To running tests execute
+```
+python -m unittest -v tests/*.py
+```
+in the project root
+
 ## Examples for API
 
 #### POST (upload)
