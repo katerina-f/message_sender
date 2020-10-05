@@ -1,5 +1,5 @@
 # internal modules
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # external modules
 from redis import Redis
@@ -21,6 +21,9 @@ class Validator:
     """
 
     def validate(self, message):
+
+        """ Main method of validate an incoming message """
+
         if not isinstance(message.get("body"), str):
             raise TypeError ("Body of the message must be string")
         if len(message.get("body")) > 800:
@@ -34,12 +37,18 @@ class Validator:
         return message
 
     def validate_recipients(self, recipients):
+
+        """ Method of validate recipients """
+
         if not isinstance(recipients, list):
             raise TypeError ("Recipients of the message must be list of dicts")
 
         return list(map(self.validate_recipient, recipients))
 
     def validate_recipient(self, recipient):
+
+        """ Method of validate one recipient """
+
         if not isinstance(recipient, dict):
             raise TypeError ("Recipient of the message must be a dict")
         if not isinstance(recipient.get("service"), str):
@@ -49,13 +58,16 @@ class Validator:
         return recipient
 
     def validate_send_at(self, send_at):
+
+        """ Method of validate send date """
+
         if not isinstance(send_at, str):
             raise TypeError ("send_at parameter must be a str")
         formate_string = "%Y-%m-%d %H:%M:%S"
 
         send_at = datetime.strptime(send_at, formate_string)
 
-        if send_at < datetime.now():
+        if send_at < datetime.now() + timedelta(minutes=2):
             raise ValueError ("Date must be in a future!")
 
         return send_at
@@ -84,6 +96,18 @@ class Postman:
                                     default_timeout=DELETE_FINISHED_TIMEOUT)
 
     def send_message(self, message):
+
+        """
+        Method for sending messages for specific messengers using queues
+
+        :param message: dict object
+        format is {"body": "Hello",
+                   "send_at": "2020-10-04 08:15:00",
+                   "recipients": [
+                       {"uuid": 1, "service": "whatsapp"},
+                       {"uuid": None, "service": "telegram"}
+                   ]}
+        """
         started_jobs = []
         scheduled = []
         for messenger in message["recipients"]:
@@ -109,14 +133,19 @@ class Postman:
                 started_jobs.append(send_job.description)
 
         result = {"started": started_jobs, "scheduled": scheduled}
-
         return result
 
     def get_scheduled(self):
+
+        """ Deffered message search method """
+
         scheduled = self.__get_jobs_descriptions(self.scheduled_queue.scheduled_job_registry.get_job_ids())
         return {"scheduled": scheduled}
 
     def get_finished(self):
+
+        """ Finished jobs (message) search method """
+
         finished_scheduled = self.__get_jobs_descriptions(self.scheduled_queue.finished_job_registry.get_job_ids())
         finished_main = self.__get_jobs_descriptions(self.main_queue.finished_job_registry.get_job_ids())
         finished_with_fail = self.__get_jobs_descriptions(self.main_queue.failed_job_registry.get_job_ids() +
@@ -127,6 +156,9 @@ class Postman:
                 "finished_with_fail": finished_with_fail}
 
     def delete_all(self):
+
+        """ Finished jobs (message) delete method """
+
         self.main_queue.empty()
         self.scheduled_queue.empty()
         self.check_queue.empty()
@@ -145,7 +177,9 @@ class Postman:
 
         return "Success"
 
-
     def __get_jobs_descriptions(self, jobs):
+
+        """ Jobs (message) descriptions search method """
+
         jobs = Job.fetch_many(jobs, connection=self.redis_conn)
         return [job.description for job in jobs]

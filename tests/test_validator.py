@@ -5,7 +5,7 @@ from unittest import TestCase, main
 from unittest.mock import Mock, MagicMock, patch, call, create_autospec
 
 # project modules
-from app.utils import Validator
+from app import Validator
 
 from .test_data import *
 

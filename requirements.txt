@@ -4,6 +4,7 @@ certifi==2020.6.20
 chardet==3.0.4
 click==7.1.2
 croniter==0.3.34
+fakeredis==1.4.3
 Flask==1.1.2
 Flask-HTTPAuth==4.1.0
 Flask-RESTful==0.3.8
@@ -20,5 +21,6 @@ rq==1.5.2
 rq-dashboard==0.6.1
 rq-scheduler==0.10.0
 six==1.15.0
+sortedcontainers==2.2.2
 urllib3==1.25.10
 Werkzeug==1.0.1
