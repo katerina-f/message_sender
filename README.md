@@ -75,11 +75,11 @@ Server: Werkzeug/1.0.1 Python/3.8.6
 Date: Mon, 05 Oct 2020 14:57:35 GMT
 
 {
-  "scheduled": [
-    "Message to user: 1 with body: Hello",
-    "Message to user: 2 with body: Hello"
-  ],
-  "started": []
+  "scheduled": [],
+  "started": [
+      "Message to user: 2 with body: Hello Queued at 2020-10-06 07:45:55 to messenger: telegram",
+      "Message to user: 1 with body: Hello Queued at 2020-10-06 07:45:55 to messenger: whatsapp"
+  ]
 }
 ```
 
@@ -130,7 +130,10 @@ Server: Werkzeug/1.0.1 Python/3.8.6
 Date: Mon, 05 Oct 2020 15:04:49 GMT
 
 {
-  "scheduled": []
+  "scheduled": [
+    "Message to user: 2 with body: Hi Queued at 2020-10-06 07:45:55 to messenger: telegram",
+    "Message to user: 1 with body: Hi Queued at 2020-10-06 07:45:55 to messenger: telegram"
+  ]
 }
 ```
 
@@ -151,19 +154,16 @@ Date: Mon, 05 Oct 2020 15:07:30 GMT
 
 {
   "finished_main": [
-    "Message to user: 1 with body: Hello",
-    "Message to user: 2 with body: Hello",
-    "Message to user: 2 with body: Hello",
-    "Message to user: 1 with body: Hello",
+    "Message to user: 1 with body: Buy Queued at 2020-10-06 07:37:17 to messenger: whatsapp",
+    "Message to user: 1 with body: Buy Queued at 2020-10-04 07:37:17 to messenger: whatsapp",
+    "Message to user: 2 with body: Hello Queued at 2020-10-06 07:45:55 to messenger: telegram",
+    "Message to user: 1 with body: Hello Queued at 2020-10-06 07:45:55 to messenger: telegram"
   ],
   "finished_scheduled": [
-    "Message to user: 2 with body: Buy",
-    "Message to user: 1 with body: Buy",
+    "Message to user: 2 with body: Buy Queued at 2020-10-05 07:45:55 to messenger: telegram",
+    "Message to user: 1 with body: Buy Queued at 2020-10-05 07:45:55 to messenger: telegram",
   ],
-  "finished_with_fail": [
-    "Message to user: 2 with body: Hello",
-    "Message to user: 2 with body: Buy"
-  ]
+  "finished_with_fail": []
 }
 ```
 #### DELETE
@@ -186,7 +186,7 @@ Date: Mon, 05 Oct 2020 15:18:14 GMT
 "Success"
 ```
 
-## Techology Stack
+## Technology Stack
 
 ##### Flask
 
