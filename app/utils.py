@@ -1,5 +1,6 @@
 # internal modules
 from datetime import datetime, timedelta
+import json
 
 # external modules
 from redis import Redis
@@ -43,7 +44,9 @@ class Validator:
         if not isinstance(recipients, list):
             raise TypeError ("Recipients of the message must be list of dicts")
 
-        return list(map(self.validate_recipient, recipients))
+        # removing dublicates
+        sorted_list = set(list(json.dumps(rec, sort_keys=True) for rec in recipients))
+        return list(map(self.validate_recipient, [json.loads(rec) for rec in sorted_list]))
 
     def validate_recipient(self, recipient):
 
@@ -115,7 +118,10 @@ class Postman:
             if not service:
                 raise ValueError ("Unknown messenger!!!")
 
-            description = f"Message to user: {messenger.get('uuid')} with body: {message.get('body')}"
+            queued = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+
+            description = (f"Message to user: {messenger.get('uuid')} with body: {message.get('body')} "
+                    f"Queued at {queued} to messenger: {messenger.get('service')}")
 
             if message.get("send_at"):
                 scheduled_send_job = self.scheduled_queue.enqueue_at(message.get("send_at"),
