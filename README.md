@@ -22,7 +22,15 @@ services:
     ports:
 ...
 ```
+And set TimeZone to your TimeZone
 
+```
+...
+    environment:
+        - REDIS_REPLICATION_MODE=master
+        - TZ=Europe/Moscow #here
+...
+```
 ### Instalation
 
 To install and run the code in the docker containers,
