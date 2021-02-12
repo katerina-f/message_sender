@@ -1,6 +1,6 @@
 # Message Sender
 
-This application will allow you to send messages to popular instant messengers (Viber, Telegram, WhatsApp)
+This application-template for sending messages to popular instant messengers (Viber, Telegram, WhatsApp) without integration with services
 
 ## Getting Started
 
