@@ -217,4 +217,4 @@ Excellent message queuing library for Redis
 
 ## Authors
 
-* **Katerina Frolova** - *Initial work* - [katyfrolova](https://github.com/katyfrolova)
+* **Katerina Frolova** - *Initial work* - [katerina-f](https://github.com/katerina-f)
